@@ -1,0 +1,30 @@
+name: node-api
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set short commit hash as env
+      run: echo "GITHUB_COMMIT_ID=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+    - name: Install SSH keys
+      run: |
+        install -m 600 -D /dev/null ~/.ssh/id_rsa
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+
+    - name: Connect SSH and pull node-login-app deployment commands
+      run: |
+        ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+
+          echo "---------- Changing Directory ---------------"
+          cd ${{ secrets.WORK_DIR }}
+          
+          echo "----------------- Git Pull ------------------"
+          git pull origin ${{ secrets.PRD_BRANCH }}
